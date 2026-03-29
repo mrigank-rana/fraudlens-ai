@@ -4,7 +4,7 @@ FraudLens AI is an enterprise-grade, real-time transaction monitoring dashboard 
 
 Unlike traditional rule-based engines, FraudLens utilizes unsupervised machine learning to detect anomalous behavioral velocity and multi-hop network connections, providing analysts with actionable, human-readable intelligence.
 
-![FraudLens Dashboard Placeholder](link-to-your-screenshot-here.png)
+![FraudLens Dashboard Placeholder](dashboard.png)
 
 ## ⚡ Core Features
 
