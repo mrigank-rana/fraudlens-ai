@@ -1,0 +1,44 @@
+name: FraudLens CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      
+    # --- NODE.JS BACKEND & FRONTEND ---
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm ci || npm install
+        
+    - name: Install Frontend Dependencies & Build
+      run: |
+        cd frontend
+        npm ci || npm install
+        npm run build
+
+    # --- PYTHON ML API ---
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install ML API Dependencies
+      run: |
+        cd ml-api
+        python -m pip install --upgrade pip
+        pip install fastapi uvicorn scikit-learn shap pandas numpy

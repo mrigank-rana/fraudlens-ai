@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+__pycache__/
+venv/
+env/
+.env
+
+# Logs and Databases
+*.log
+npm-debug.log*
+data/db/
+*.sqlite3
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build directories
+dist/
+build/
+
+# Datasets
+*.csv
+
+# Backup and Original Files
+frontend/src/App_og.jsx
