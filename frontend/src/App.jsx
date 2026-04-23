@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { ShieldAlert, Activity, Database, Network, BarChart2, ShieldBan, Search, CheckCircle, X, List, ShieldCheck, Eye, MapPin } from 'lucide-react';
+import { ShieldAlert, Activity, Database, Network, BarChart2, ShieldBan, Search, CheckCircle, X, List, ShieldCheck, Eye } from 'lucide-react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const socket = io('http://localhost:3001');
 
@@ -95,7 +96,7 @@ function App() {
 
           <button 
             onClick={() => setIsOverlayOpen(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded flex items-center gap-2 border border-blue-800"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded flex items-center gap-2 border border-blue-800 transition-colors"
           >
             <List size={16} />
             Action Log ({actionedTxns.length})
@@ -109,85 +110,90 @@ function App() {
         <div className="lg:col-span-2 bg-slate-800 border border-slate-700 rounded shadow h-[700px] flex flex-col">
           <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
             <h2 className="text-lg font-bold flex items-center gap-2">
-              <Activity className="text-green-500" size={18} /> Live Stream
+              <Activity className="text-green-500 animate-pulse" size={18} /> Live Stream
             </h2>
-            <span className="text-xs text-slate-400 bg-slate-900 px-2 py-1 rounded border border-slate-700">Ping: 124ms</span>
+            <span className="text-xs text-slate-400 bg-slate-900 px-2 py-1 rounded border border-slate-700 font-mono">&lt; 200ms Latency</span>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="flex-1 overflow-y-auto overflow-x-auto relative">
+            <table className="w-full text-left border-collapse min-w-[650px]">
               <thead className="bg-slate-900 sticky top-0 z-10 border-b-2 border-slate-700">
                 <tr className="text-slate-300 text-sm">
                   <th className="p-3">TXN ID</th>
                   <th className="p-3">Amount</th>
-                  <th className="p-3">Risk</th>
+                  <th className="p-3">Risk Score</th>
                   <th className="p-3">Status</th>
                   <th className="p-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {transactions.map((txn) => {
-                  const actionRecord = actionedTxns.find(a => a.txn_id === txn.txn_id);
-                  const isBlocked = actionRecord?.actionType === 'BLOCK';
-                  const isSupervised = actionRecord?.actionType === 'SUPERVISE';
-                  const isHigh = txn.flag === 'HIGH';
-                  
-                  return (
-                    <tr 
-                      key={txn.txn_id} 
-                      onClick={() => setSelectedTxn(txn)}
-                      className={`border-b border-slate-700 cursor-pointer ${
-                        isBlocked ? 'bg-slate-900 opacity-60' : 
-                        isSupervised ? 'bg-yellow-900/10 border-l-2 border-l-yellow-500' :
-                        isHigh ? 'bg-red-900/30 hover:bg-red-900/50' : 'hover:bg-slate-700'
-                      }`}
-                    >
-                      <td className="p-3 font-mono text-sm">{txn.txn_id}</td>
-                      <td className="p-3">₹{(txn.amount || 0).toLocaleString()}</td>
-                      <td className="p-3">
-                        <div className="w-full bg-slate-900 h-2 rounded overflow-hidden border border-slate-700">
-                          <div 
-                            className={`h-full ${isHigh ? 'bg-red-500' : txn.flag === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'}`}
-                            style={{ width: `${txn.risk_score}%` }}
-                          />
-                        </div>
-                        <span className="text-xs mt-1 text-slate-400">{txn.risk_score} / 100</span>
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-1 rounded text-xs font-bold ${
-                          isHigh ? 'bg-red-600 text-white' : txn.flag === 'MEDIUM' ? 'bg-yellow-600 text-white' : 'bg-green-600 text-white'
-                        }`}>
-                          {txn.flag}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right">
-                        {isBlocked ? (
-                          <div className="text-green-500 font-bold text-xs flex items-center justify-end gap-1 uppercase tracking-wide">
-                            <CheckCircle size={14} /> Blocked
+                <AnimatePresence initial={false}>
+                  {transactions.map((txn) => {
+                    const actionRecord = actionedTxns.find(a => a.txn_id === txn.txn_id);
+                    const isBlocked = actionRecord?.actionType === 'BLOCK';
+                    const isSupervised = actionRecord?.actionType === 'SUPERVISE';
+                    const isHigh = txn.flag === 'HIGH';
+                    
+                    return (
+                      <motion.tr 
+                        key={txn.txn_id} 
+                        initial={{ opacity: 0, y: -20, backgroundColor: isHigh ? 'rgba(153, 27, 27, 0.8)' : 'rgba(71, 85, 105, 0.8)' }}
+                        animate={{ opacity: 1, y: 0, backgroundColor: 'transparent' }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
+                        onClick={() => setSelectedTxn(txn)}
+                        className={`border-b border-slate-700 cursor-pointer transition-colors ${
+                          isBlocked ? 'bg-slate-900 opacity-60' : 
+                          isSupervised ? 'bg-yellow-900/10 border-l-2 border-l-yellow-500' :
+                          isHigh ? 'bg-red-900/30 hover:bg-red-900/50 shadow-[inset_4px_0_0_0_rgba(239,68,68,1)]' : 'hover:bg-slate-700'
+                        }`}
+                      >
+                        <td className="p-3 font-mono text-sm">{txn.txn_id}</td>
+                        <td className="p-3">₹{(txn.amount || 0).toLocaleString()}</td>
+                        <td className="p-3">
+                          <div className="w-full bg-slate-900 h-2 rounded overflow-hidden border border-slate-700">
+                            <div 
+                              className={`h-full ${isHigh ? 'bg-red-500' : txn.flag === 'MEDIUM' ? 'bg-yellow-500' : 'bg-green-500'}`}
+                              style={{ width: `${txn.risk_score}%` }}
+                            />
                           </div>
-                        ) : isSupervised ? (
-                          <div className="text-yellow-500 font-bold text-xs flex items-center justify-end gap-1 uppercase tracking-wide">
-                            <Eye size={14} /> Tagged
-                          </div>
-                        ) : isHigh ? (
-                          <button 
-                            onClick={(e) => handleAction(e, txn, 'BLOCK')}
-                            className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded font-bold border border-red-800 flex items-center gap-1 justify-end w-full md:w-auto ml-auto"
-                          >
-                            <ShieldBan size={14} /> Block
-                          </button>
-                        ) : (
-                          <button 
-                            onClick={(e) => handleAction(e, txn, 'SUPERVISE')}
-                            className="bg-slate-800 hover:bg-yellow-700 text-slate-300 hover:text-white text-xs px-3 py-1 rounded border border-slate-600 hover:border-yellow-600 flex items-center gap-1 justify-end w-full md:w-auto ml-auto transition-colors"
-                          >
-                            <Eye size={14} /> Watch
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                          <span className="text-xs mt-1 text-slate-400 font-mono">{txn.risk_score} / 100</span>
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                            isHigh ? 'bg-red-600 text-white' : txn.flag === 'MEDIUM' ? 'bg-yellow-600 text-white' : 'bg-green-600 text-white'
+                          }`}>
+                            {txn.flag}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right">
+                          {isBlocked ? (
+                            <div className="text-green-500 font-bold text-xs flex items-center justify-end gap-1 uppercase tracking-wide">
+                              <CheckCircle size={14} /> Blocked
+                            </div>
+                          ) : isSupervised ? (
+                            <div className="text-yellow-500 font-bold text-xs flex items-center justify-end gap-1 uppercase tracking-wide">
+                              <Eye size={14} /> Tagged
+                            </div>
+                          ) : isHigh ? (
+                            <button 
+                              onClick={(e) => handleAction(e, txn, 'BLOCK')}
+                              className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded font-bold border border-red-800 flex items-center gap-1 justify-end w-full md:w-auto ml-auto transition-all"
+                            >
+                              <ShieldBan size={14} /> Block
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={(e) => handleAction(e, txn, 'SUPERVISE')}
+                              className="bg-slate-800 hover:bg-yellow-700 text-slate-300 hover:text-white text-xs px-3 py-1 rounded border border-slate-600 hover:border-yellow-600 flex items-center gap-1 justify-end w-full md:w-auto ml-auto transition-all"
+                            >
+                              <Eye size={14} /> Watch
+                            </button>
+                          )}
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </AnimatePresence>
               </tbody>
             </table>
           </div>
@@ -202,7 +208,7 @@ function App() {
               <div className="relative group">
                 <button 
                   onClick={() => setActiveTab('shap')}
-                  className={`px-3 py-1 text-sm ${activeTab === 'shap' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1 text-sm transition-colors ${activeTab === 'shap' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
                 >
                   SHAP
                 </button>
@@ -213,7 +219,7 @@ function App() {
               <div className="relative group">
                 <button 
                   onClick={() => setActiveTab('network')}
-                  className={`px-3 py-1 text-sm border-l border-slate-700 ${activeTab === 'network' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                  className={`px-3 py-1 text-sm border-l border-slate-700 transition-colors ${activeTab === 'network' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
                 >
                   Graph
                 </button>
@@ -250,7 +256,7 @@ function App() {
               
               {/* SHAP VIEW */}
               {activeTab === 'shap' && (
-                <div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <p className="text-sm font-bold text-slate-400 mb-2 border-b border-slate-700 pb-2">Isolation Forest Output</p>
                   <div className="h-64 w-full bg-slate-900 p-2 rounded border border-slate-700 mb-4">
                     <ResponsiveContainer width="100%" height="100%">
@@ -266,12 +272,12 @@ function App() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* NETWORK GRAPH VIEW */}
               {activeTab === 'network' && (
-                <div>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <p className="text-sm font-bold text-slate-400 mb-2 border-b border-slate-700 pb-2">Multi-hop Fingerprinting</p>
                   <div className="relative w-full h-48 bg-slate-900 rounded border border-slate-700 mb-4">
                     <svg className="absolute inset-0 w-full h-full">
@@ -281,20 +287,20 @@ function App() {
                       <line x1="50%" y1="50%" x2="25%" y2="75%" stroke="#dc2626" strokeWidth="3" />
                     </svg>
                     
-                    <div className={`absolute top-[35%] left-[38%] w-16 h-16 ${selectedTxn.flag === 'HIGH' ? 'bg-red-900 border-red-500' : 'bg-blue-600 border-blue-400'} border-2 rounded-full flex items-center justify-center z-10 cursor-help`} title="Target Transaction Node">
+                    <div className={`absolute top-[35%] left-[38%] w-16 h-16 ${selectedTxn.flag === 'HIGH' ? 'bg-red-900 border-red-500' : 'bg-blue-600 border-blue-400'} border-2 rounded-full flex items-center justify-center z-10 cursor-help transition-all duration-300 hover:scale-105`} title="Target Transaction Node">
                       <span className="text-[10px] font-mono font-bold text-white text-center">Target<br/>{selectedTxn.txn_id.split('-')[1]}</span>
                     </div>
                     
-                    <div className="absolute top-[15%] left-[15%] w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center border border-slate-500 z-10 cursor-help" title="Safe Account History">
+                    <div className="absolute top-[15%] left-[15%] w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center border border-slate-500 z-10 cursor-help hover:border-slate-300 transition-colors" title="Safe Account History">
                       <span className="text-[8px] text-slate-300">A-22</span>
                     </div>
-                    <div className="absolute top-[15%] right-[15%] w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center border border-yellow-600 z-10 cursor-help" title="Medium Risk Behavior Flag">
+                    <div className="absolute top-[15%] right-[15%] w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center border border-yellow-600 z-10 cursor-help hover:border-yellow-400 transition-colors" title="Medium Risk Behavior Flag">
                       <span className="text-[8px] text-yellow-500">M-43</span>
                     </div>
-                    <div className="absolute bottom-[10%] right-[25%] w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center border border-slate-500 z-10 cursor-help" title="Unverified Device Node">
+                    <div className="absolute bottom-[10%] right-[25%] w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center border border-slate-500 z-10 cursor-help hover:border-slate-300 transition-colors" title="Unverified Device Node">
                       <span className="text-[8px] text-slate-400">U-91</span>
                     </div>
-                    <div className="absolute bottom-[15%] left-[20%] w-12 h-12 bg-red-900 rounded-full flex items-center justify-center border-2 border-red-500 z-10 cursor-help" title="Confirmed Fraudulent Node">
+                    <div className="absolute bottom-[15%] left-[20%] w-12 h-12 bg-red-900 rounded-full flex items-center justify-center border-2 border-red-500 z-10 cursor-help hover:border-red-400 transition-colors" title="Confirmed Fraudulent Node">
                       <span className="text-[9px] font-bold text-red-400">TX-76</span>
                     </div>
                   </div>
@@ -311,7 +317,7 @@ function App() {
                   </div>
 
                   <div className="bg-slate-900 p-3 rounded border border-slate-700 text-sm text-slate-300">
-                    <h3 className="font-bold text-white mb-2 border-b border-slate-700 pb-1 flex justify-between">
+                    <h3 className="font-bold text-white mb-2 border-b border-slate-700 pb-1 flex justify-between items-center">
                       <span>Behavioral Analysis</span>
                       {selectedTxn.location_mismatch === 1 && <span className="text-red-400 flex items-center gap-1 text-xs"><ShieldBan size={12}/> VPN/Proxy Detected</span>}
                     </h3>
@@ -352,7 +358,7 @@ function App() {
                     </div>
                   )}
 
-                </div>
+                </motion.div>
               )}
             </div>
           ) : (
@@ -365,13 +371,13 @@ function App() {
 
       {/* DUAL ACTION LOG OVERLAY */}
       {isOverlayOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="bg-slate-800 border-2 border-slate-600 rounded w-full max-w-3xl max-h-[80vh] flex flex-col shadow-2xl">
             <div className="flex justify-between items-center p-4 border-b border-slate-700 bg-slate-900">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <ShieldCheck className="text-blue-500" size={20} /> Action Log
               </h2>
-              <button onClick={() => setIsOverlayOpen(false)} className="text-slate-400 hover:text-white bg-slate-800 px-2 py-1 rounded border border-slate-600 text-xs font-bold">
+              <button onClick={() => setIsOverlayOpen(false)} className="text-slate-400 hover:text-white bg-slate-800 px-2 py-1 rounded border border-slate-600 text-xs font-bold transition-colors">
                 CLOSE
               </button>
             </div>
