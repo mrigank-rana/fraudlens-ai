@@ -6,7 +6,8 @@ import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const socket = io('http://localhost:3001');
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const socket = io(API_BASE_URL);
 
 // --- AXIS FORMATTERS & TOOLTIP ---
 const featureDictionary = {
@@ -58,7 +59,7 @@ function App() {
   const { data: historyData, isLoading } = useQuery({
     queryKey: ['txHistory'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:3001/api/transactions/history');
+      const res = await axios.get(`${API_BASE_URL}/api/transactions/history`);
       return res.data;
     }
   });

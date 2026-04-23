@@ -6,18 +6,24 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 const server = http.createServer(app);
 
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/fraudlens";
+const ML_API_URL = process.env.ML_API_URL || "http://localhost:8000";
+const PORT = process.env.PORT || 3001;
+
 const io = new Server(server, {
-  cors: { origin: "http://localhost:5173", methods: ["GET", "POST"] }
+  cors: { origin: FRONTEND_ORIGIN, methods: ["GET", "POST"] }
 });
 
 // --- MONGODB SETUP ---
-mongoose.connect('mongodb://127.0.0.1:27017/fraudlens')
+mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log('MongoDB Connected successfully!');
     // HACKATHON TRICK: Wipe old ghost records on restart so the judges only see complete, perfect data
@@ -94,7 +100,7 @@ io.on('connection', (socket) => {
     let enrichedTxn;
 
     try {
-      const response = await axios.post('http://localhost:8000/predict', rawTxn);
+      const response = await axios.post(`${ML_API_URL}/predict`, rawTxn);
       enrichedTxn = { ...rawTxn, ...response.data };
 
       // --- THE BULLETPROOF DEMO FORMATTER ---
@@ -138,5 +144,4 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = 3001;
 server.listen(PORT, () => console.log(`Backend Server running on port ${PORT}`));
